@@ -9,13 +9,15 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "tailwind-prism.helloWorld",
-        "title": "Hello World"
+        "command": "tailwind-prism.toggle",
+        "title": "Tailwind Prism: Toggle Highlighting"
       }
     ],
     "grammars": [
@@ -28,6 +30,20 @@
           "source.ts",
           "source.tsx"
         ]
+      }
+    ],
+    "semanticTokenTypes": [
+      {
+        "id": "modifier",
+        "description": "Tailwind variants like hover:, dark:"
+      },
+      {
+        "id": "operator",
+        "description": "Tailwind important modifier !"
+      },
+      {
+        "id": "property",
+        "description": "Tailwind utilities"
       }
     ]
   },
