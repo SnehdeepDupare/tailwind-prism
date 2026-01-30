@@ -57,17 +57,32 @@ function updateEditor(editor?: vscode.TextEditor) {
 
   while ((match = cnRegex.exec(text))) {
     const args = match[1];
-
-    // match string literals inside cn()
-    const stringRegex = /"([^"]+)"/g;
     let strMatch: RegExpExecArray | null;
 
+    // match string literals
+    const stringRegex = /"([^"]+)"/g;
+
+    // match template literals
+    const templateRegex = /`([^`]*)`/g;
+
+    // strings
     while ((strMatch = stringRegex.exec(args))) {
       const value = strMatch[1];
 
-      const baseIndex = match.index + match[0].indexOf(strMatch[0]) + 1; // skip opening quote
+      const baseIndex = match.index + match[0].indexOf(strMatch[0]) + 1;
 
       processClassString(value, baseIndex, editor.document, ranges);
+    }
+
+    // template literals
+    let tplMatch: RegExpExecArray | null;
+
+    while ((tplMatch = templateRegex.exec(args))) {
+      const value = tplMatch[1];
+
+      const baseIndex = match.index + match[0].indexOf(tplMatch[0]) + 1;
+
+      processTemplateLiteral(value, baseIndex, editor.document, ranges);
     }
   }
 
@@ -130,6 +145,41 @@ function processClassString(
     );
 
     offset += part.length + 1;
+  }
+}
+
+function processTemplateLiteral(
+  value: string,
+  baseIndex: number,
+  document: vscode.TextDocument,
+  ranges: {
+    variantRanges: vscode.Range[];
+    importantRanges: vscode.Range[];
+    arbitraryRanges: vscode.Range[];
+    utilityRanges: vscode.Range[];
+  },
+) {
+  const regex = /\$\{[^}]*\}/g;
+
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(value))) {
+    // Static part before ${...}
+    const staticPart = value.slice(lastIndex, match.index);
+
+    if (staticPart.trim()) {
+      processClassString(staticPart, baseIndex + lastIndex, document, ranges);
+    }
+
+    // Move past ${...}
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Trailing static part after last ${...}
+  const remaining = value.slice(lastIndex);
+  if (remaining.trim()) {
+    processClassString(remaining, baseIndex + lastIndex, document, ranges);
   }
 }
 
