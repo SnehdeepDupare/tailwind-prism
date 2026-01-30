@@ -33,12 +33,15 @@ function updateEditor(editor?: vscode.TextEditor) {
 
   const text = editor.document.getText();
 
-  const classRegex = /(className|class)\s*=\s*"([^"]+)"/g;
+  const ranges = {
+    variantRanges: [] as vscode.Range[],
+    importantRanges: [] as vscode.Range[],
+    arbitraryRanges: [] as vscode.Range[],
+    utilityRanges: [] as vscode.Range[],
+  };
 
-  const variantRanges: vscode.Range[] = [];
-  const importantRanges: vscode.Range[] = [];
-  const arbitraryRanges: vscode.Range[] = [];
-  const utilityRanges: vscode.Range[] = [];
+  // class / className="..."
+  const classRegex = /(className|class)\s*=\s*"([^"]+)"/g;
 
   let match: RegExpExecArray | null;
 
@@ -46,60 +49,88 @@ function updateEditor(editor?: vscode.TextEditor) {
     const classValue = match[2];
     const baseIndex = match.index + match[0].indexOf(classValue);
 
-    const parts = classValue.split(/\s+/);
-    let offset = 0;
+    processClassString(classValue, baseIndex, editor.document, ranges);
+  }
 
-    for (const part of parts) {
-      if (!part) continue;
+  // cn("...", ...)
+  const cnRegex = /\bcn\s*\(([\s\S]*?)\)/g;
 
-      const start = baseIndex + offset;
-      const startPos = editor.document.positionAt(start);
+  while ((match = cnRegex.exec(text))) {
+    const args = match[1];
 
-      // variant: hover:, dark:, sm:
-      const variantMatch = part.match(/^([a-z-]+:)/);
-      if (variantMatch) {
-        variantRanges.push(
-          new vscode.Range(
-            startPos,
-            startPos.translate(0, variantMatch[1].length),
-          ),
-        );
-      }
+    // match string literals inside cn()
+    const stringRegex = /"([^"]+)"/g;
+    let strMatch: RegExpExecArray | null;
 
-      // important: !
-      if (part.startsWith("!")) {
-        importantRanges.push(
-          new vscode.Range(startPos, startPos.translate(0, 1)),
-        );
-      }
+    while ((strMatch = stringRegex.exec(args))) {
+      const value = strMatch[1];
 
-      // arbitrary: [state=open]
-      const arbitraryMatch = part.match(/\[[^\]]+\]/);
-      if (arbitraryMatch) {
-        const i = part.indexOf(arbitraryMatch[0]);
-        arbitraryRanges.push(
-          new vscode.Range(
-            startPos.translate(0, i),
-            startPos.translate(0, i + arbitraryMatch[0].length),
-          ),
-        );
-      }
+      const baseIndex = match.index + match[0].indexOf(strMatch[0]) + 1; // skip opening quote
 
-      // utility fallback
-      utilityRanges.push(
-        new vscode.Range(startPos, startPos.translate(0, part.length)),
-      );
-
-      offset += part.length + 1;
+      processClassString(value, baseIndex, editor.document, ranges);
     }
   }
 
-  applyDecorations(editor, {
-    variantRanges,
-    importantRanges,
-    arbitraryRanges,
-    utilityRanges,
-  });
+  applyDecorations(editor, ranges);
+}
+
+function processClassString(
+  value: string,
+  baseIndex: number,
+  document: vscode.TextDocument,
+  ranges: {
+    variantRanges: vscode.Range[];
+    importantRanges: vscode.Range[];
+    arbitraryRanges: vscode.Range[];
+    utilityRanges: vscode.Range[];
+  },
+) {
+  const parts = value.split(/\s+/);
+  let offset = 0;
+
+  for (const part of parts) {
+    if (!part) continue;
+
+    const start = baseIndex + offset;
+    const startPos = document.positionAt(start);
+
+    // variant: hover:, dark:, sm:
+    const variantMatch = part.match(/^([a-z-]+:)/);
+    if (variantMatch) {
+      ranges.variantRanges.push(
+        new vscode.Range(
+          startPos,
+          startPos.translate(0, variantMatch[1].length),
+        ),
+      );
+    }
+
+    // important: !
+    if (part.startsWith("!")) {
+      ranges.importantRanges.push(
+        new vscode.Range(startPos, startPos.translate(0, 1)),
+      );
+    }
+
+    // arbitrary: [state=open]
+    const arbitraryMatch = part.match(/\[[^\]]+\]/);
+    if (arbitraryMatch) {
+      const i = part.indexOf(arbitraryMatch[0]);
+      ranges.arbitraryRanges.push(
+        new vscode.Range(
+          startPos.translate(0, i),
+          startPos.translate(0, i + arbitraryMatch[0].length),
+        ),
+      );
+    }
+
+    // utility fallback
+    ranges.utilityRanges.push(
+      new vscode.Range(startPos, startPos.translate(0, part.length)),
+    );
+
+    offset += part.length + 1;
+  }
 }
 
 function applyDecorations(
