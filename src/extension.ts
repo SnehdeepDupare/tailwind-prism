@@ -1,7 +1,18 @@
 import * as vscode from "vscode";
 
+type HighlightMode = "full" | "cursor";
+
+type ModePickItem = vscode.QuickPickItem & {
+  value: HighlightMode;
+};
+
 let enabled = false;
 let decorations: vscode.TextEditorDecorationType[] = [];
+
+function getHighlightMode(): "full" | "cursor" {
+  const config = vscode.workspace.getConfiguration("tailwindPrism");
+  return config.get<"full" | "cursor">("highlightMode", "full");
+}
 
 export function activate(context: vscode.ExtensionContext) {
   const toggle = vscode.commands.registerCommand(
@@ -18,20 +29,109 @@ export function activate(context: vscode.ExtensionContext) {
     },
   );
 
+  const selectMode = vscode.commands.registerCommand(
+    "tailwind-prism.selectMode",
+    async () => {
+      const currentMode = getHighlightMode();
+
+      const choice = await vscode.window.showQuickPick<ModePickItem>(
+        [
+          {
+            label: "Full file",
+            description: "Highlight all Tailwind classnames in the file",
+            value: "full",
+          },
+          {
+            label: "Cursor only",
+            description: "Highlight only the active class block",
+            value: "cursor",
+          },
+        ],
+        {
+          placeHolder: "Select Tailwind Prism highlight mode",
+        },
+      );
+
+      if (!choice) {
+        return;
+      }
+
+      await vscode.workspace
+        .getConfiguration("tailwindPrism")
+        .update(
+          "highlightMode",
+          choice.value,
+          vscode.ConfigurationTarget.Global,
+        );
+
+      updateEditor(vscode.window.activeTextEditor);
+    },
+  );
+
+  context.subscriptions.push(selectMode);
+
   context.subscriptions.push(toggle);
 
   vscode.window.onDidChangeActiveTextEditor(updateEditor);
   vscode.workspace.onDidChangeTextDocument(() =>
     updateEditor(vscode.window.activeTextEditor),
   );
+  vscode.window.onDidChangeTextEditorSelection((e) => {
+    updateEditor(e.textEditor);
+  });
+}
+
+function getTailwindContextAtCursor(
+  document: vscode.TextDocument,
+  offset: number,
+): { value: string; baseIndex: number; type?: string } | null {
+  const text = document.getText();
+
+  // class / className="..."
+  const classRegex = /(className|class)\s*=\s*"([^"]+)"/g;
+
+  let match: RegExpExecArray | null;
+
+  while ((match = classRegex.exec(text))) {
+    const value = match[2];
+    const baseIndex = match.index + match[0].indexOf(value);
+
+    if (offset >= baseIndex && offset <= baseIndex + value.length) {
+      return { value, baseIndex };
+    }
+  }
+
+  // cn / clsx / classnames
+  const fnRegex = /\b(cn|clsx|classnames)\s*\(([\s\S]*?)\)/g;
+
+  while ((match = fnRegex.exec(text))) {
+    const fullCall = match[0];
+    const args = match[2];
+
+    const callStart = match.index;
+    const callEnd = callStart + fullCall.length;
+
+    // cursor anywhere inside the call
+    if (offset >= callStart && offset <= callEnd) {
+      return {
+        value: args, // ENTIRE argument list
+        baseIndex: match.index + match[0].indexOf(args),
+        type: "function",
+      };
+    }
+  }
+
+  return null;
 }
 
 function updateEditor(editor?: vscode.TextEditor) {
-  if (!enabled || !editor) return;
+  const highlightMode = getHighlightMode();
+
+  if (!enabled || !editor) {
+    return;
+  }
 
   clearDecorations();
-
-  const text = editor.document.getText();
 
   const ranges = {
     variantRanges: [] as vscode.Range[],
@@ -40,49 +140,92 @@ function updateEditor(editor?: vscode.TextEditor) {
     utilityRanges: [] as vscode.Range[],
   };
 
-  // class / className="..."
-  const classRegex = /(className|class)\s*=\s*"([^"]+)"/g;
+  if (highlightMode === "cursor") {
+    const cursorOffset = editor.document.offsetAt(editor.selection.active);
 
-  let match: RegExpExecArray | null;
+    const context = getTailwindContextAtCursor(editor.document, cursorOffset);
 
-  while ((match = classRegex.exec(text))) {
-    const classValue = match[2];
-    const baseIndex = match.index + match[0].indexOf(classValue);
+    if (!context) {
+      return;
+    }
 
-    processClassString(classValue, baseIndex, editor.document, ranges);
-  }
+    if (context.type === "function") {
+      // process ALL strings + templates inside cn(...)
+      const args = context.value;
 
-  // cn("...", ...)
-  const cnRegex = /\bcn\s*\(([\s\S]*?)\)/g;
+      // strings
+      const stringRegex = /"([^"]+)"/g;
+      let strMatch: RegExpExecArray | null;
 
-  while ((match = cnRegex.exec(text))) {
-    const args = match[1];
-    let strMatch: RegExpExecArray | null;
+      while ((strMatch = stringRegex.exec(args))) {
+        const value = strMatch[1];
+        const baseIndex = context.baseIndex + strMatch.index + 1;
 
-    // match string literals
-    const stringRegex = /"([^"]+)"/g;
+        processClassString(value, baseIndex, editor.document, ranges);
+      }
 
-    // match template literals
-    const templateRegex = /`([^`]*)`/g;
+      // template literals
+      const templateRegex = /`([^`]*)`/g;
+      let tplMatch: RegExpExecArray | null;
 
-    // strings
-    while ((strMatch = stringRegex.exec(args))) {
-      const value = strMatch[1];
+      while ((tplMatch = templateRegex.exec(args))) {
+        const value = tplMatch[1];
+        const baseIndex = context.baseIndex + tplMatch.index + 1;
 
-      const baseIndex = match.index + match[0].indexOf(strMatch[0]) + 1;
+        processTemplateLiteral(value, baseIndex, editor.document, ranges);
+      }
+    } else {
+      // className="..."
+      processClassString(
+        context.value,
+        context.baseIndex,
+        editor.document,
+        ranges,
+      );
+    }
+  } else {
+    // ✅ FULL FILE MODE
+    const text = editor.document.getText();
+
+    // class / className
+    const classRegex = /(className|class)\s*=\s*"([^"]+)"/g;
+
+    let match: RegExpExecArray | null;
+
+    while ((match = classRegex.exec(text))) {
+      const value = match[2];
+      const baseIndex = match.index + match[0].indexOf(value);
 
       processClassString(value, baseIndex, editor.document, ranges);
     }
 
-    // template literals
-    let tplMatch: RegExpExecArray | null;
+    // cn / clsx / classnames
+    const fnRegex = /\b(cn|clsx|classnames)\s*\(([\s\S]*?)\)/g;
 
-    while ((tplMatch = templateRegex.exec(args))) {
-      const value = tplMatch[1];
+    while ((match = fnRegex.exec(text))) {
+      const args = match[2];
 
-      const baseIndex = match.index + match[0].indexOf(tplMatch[0]) + 1;
+      // strings
+      const stringRegex = /"([^"]+)"/g;
+      let strMatch: RegExpExecArray | null;
 
-      processTemplateLiteral(value, baseIndex, editor.document, ranges);
+      while ((strMatch = stringRegex.exec(args))) {
+        const value = strMatch[1];
+        const baseIndex = match.index + match[0].indexOf(strMatch[0]) + 1;
+
+        processClassString(value, baseIndex, editor.document, ranges);
+      }
+
+      // template literals
+      const templateRegex = /`([^`]*)`/g;
+      let tplMatch: RegExpExecArray | null;
+
+      while ((tplMatch = templateRegex.exec(args))) {
+        const value = tplMatch[1];
+        const baseIndex = match.index + match[0].indexOf(tplMatch[0]) + 1;
+
+        processTemplateLiteral(value, baseIndex, editor.document, ranges);
+      }
     }
   }
 
@@ -104,7 +247,9 @@ function processClassString(
   let offset = 0;
 
   for (const part of parts) {
-    if (!part) continue;
+    if (!part) {
+      continue;
+    }
 
     const start = baseIndex + offset;
     const startPos = document.positionAt(start);

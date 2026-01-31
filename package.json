@@ -18,34 +18,26 @@
       {
         "command": "tailwind-prism.toggle",
         "title": "Tailwind Prism: Toggle Highlighting"
-      }
-    ],
-    "grammars": [
-      {
-        "scopeName": "tailwind.prism.injection",
-        "path": "./syntaxes/tailwind-prism.tmLanguage.json",
-        "injectTo": [
-          "source.js",
-          "source.jsx",
-          "source.ts",
-          "source.tsx"
-        ]
-      }
-    ],
-    "semanticTokenTypes": [
-      {
-        "id": "modifier",
-        "description": "Tailwind variants like hover:, dark:"
       },
       {
-        "id": "operator",
-        "description": "Tailwind important modifier !"
-      },
-      {
-        "id": "property",
-        "description": "Tailwind utilities"
+        "command": "tailwind-prism.selectMode",
+        "title": "Tailwind Prism: Select Highlight Mode"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Tailwind Prism",
+      "properties": {
+        "tailwindPrism.highlightMode": {
+          "type": "string",
+          "enum": [
+            "full",
+            "cursor"
+          ],
+          "default": "full",
+          "description": "Controls how Tailwind Prism highlights classnames."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run package",
