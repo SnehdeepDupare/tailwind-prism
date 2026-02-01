@@ -52,10 +52,110 @@ let decorationTypes: {
   arbitrary: vscode.TextEditorDecorationType;
   utility: vscode.TextEditorDecorationType;
 } | null = null;
+let statusBarItem: vscode.StatusBarItem;
 
 function isEnabled(): boolean {
   const config = vscode.workspace.getConfiguration("tailwindPrism");
   return config.get<boolean>("enabled", false);
+}
+
+function updateStatusBar() {
+  if (!statusBarItem) {
+    return;
+  }
+
+  const enabled = isEnabled();
+
+  statusBarItem.text = isEnabled()
+    ? `$(symbol-color) Prism · ${getHighlightMode()}`
+    : "$(symbol-color) Prism · Off";
+
+  statusBarItem.tooltip = enabled
+    ? "Click to disable Tailwind Prism"
+    : "Click to enable Tailwind Prism";
+
+  statusBarItem.show();
+}
+
+async function openStatusBarMenu() {
+  const config = vscode.workspace.getConfiguration("tailwindPrism");
+
+  const enabled = config.get<boolean>("enabled", false);
+  const mode = config.get<HighlightMode>("highlightMode", "full");
+  const preset = config.get<string>("colorPreset", "Calm");
+
+  type MenuItem = vscode.QuickPickItem & {
+    action: "toggle" | "mode" | "preset" | "customize";
+    value?: any;
+  };
+
+  const items: MenuItem[] = [
+    {
+      label: enabled ? "Disable Tailwind Prism" : "Enable Tailwind Prism",
+      description: "Toggle highlighting",
+      action: "toggle",
+    },
+    {
+      label: "Highlight Mode",
+      description: mode === "full" ? "Full file" : "Cursor only",
+      action: "mode",
+    },
+    {
+      label: "Color Preset",
+      description: preset,
+      action: "preset",
+    },
+    {
+      label: "Customize Colors…",
+      description: "Open Tailwind Prism color settings",
+      action: "customize",
+    },
+  ];
+
+  const choice = await vscode.window.showQuickPick(items, {
+    placeHolder: "Tailwind Prism",
+  });
+
+  if (!choice) {
+    return;
+  }
+
+  switch (choice.action) {
+    case "toggle": {
+      await config.update(
+        "enabled",
+        !enabled,
+        vscode.ConfigurationTarget.Global,
+      );
+
+      if (!enabled) {
+        updateEditor(vscode.window.activeTextEditor);
+      } else {
+        clearDecorations();
+      }
+
+      updateStatusBar();
+      break;
+    }
+
+    case "mode": {
+      vscode.commands.executeCommand("tailwind-prism.selectMode");
+      break;
+    }
+
+    case "preset": {
+      vscode.commands.executeCommand("tailwind-prism.selectPreset");
+      break;
+    }
+
+    case "customize": {
+      vscode.commands.executeCommand(
+        "workbench.action.openSettings",
+        "tailwindPrism.colors",
+      );
+      break;
+    }
+  }
 }
 
 function getHighlightMode(): "full" | "cursor" {
@@ -97,6 +197,7 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       updateEditor(vscode.window.activeTextEditor);
+      updateStatusBar();
     },
   );
 
@@ -139,6 +240,17 @@ export function activate(context: vscode.ExtensionContext) {
     },
   );
 
+  statusBarItem = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Right,
+    100,
+  );
+
+  statusBarItem.command = "tailwind-prism.menu";
+
+  context.subscriptions.push(statusBarItem);
+
+  updateStatusBar();
+
   context.subscriptions.push(selectMode);
 
   context.subscriptions.push(toggle);
@@ -149,6 +261,10 @@ export function activate(context: vscode.ExtensionContext) {
       selectColorPreset,
     ),
   );
+  context.subscriptions.push(
+    vscode.commands.registerCommand("tailwind-prism.menu", openStatusBarMenu),
+  );
+
   vscode.window.onDidChangeActiveTextEditor(updateEditor);
   vscode.workspace.onDidChangeTextDocument(() =>
     updateEditor(vscode.window.activeTextEditor),
@@ -161,6 +277,7 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.workspace.onDidChangeConfiguration((e) => {
     if (e.affectsConfiguration("tailwindPrism")) {
       updateEditor(vscode.window.activeTextEditor);
+      updateStatusBar();
     }
   });
 }
