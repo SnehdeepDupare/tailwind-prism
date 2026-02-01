@@ -6,7 +6,9 @@ settings:
 
 importers:
 
-  .:
+  .: {}
+
+  packages/extension:
     devDependencies:
       '@types/mocha':
         specifier: ^10.0.10
