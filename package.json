@@ -78,7 +78,15 @@
           "description": "Override color for regular Tailwind utilities."
         }
       }
-    }
+    },
+    "keybindings": [
+      {
+        "command": "tailwind-prism.toggle",
+        "key": "ctrl+alt+t",
+        "mac": "cmd+alt+t",
+        "when": "editorTextFocus"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "pnpm run package",

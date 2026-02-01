@@ -54,6 +54,24 @@ let decorationTypes: {
 } | null = null;
 let statusBarItem: vscode.StatusBarItem;
 
+const TOGGLE_HINT_KEY = "tailwindPrism.hasSeenToggleShortcutHint";
+
+async function maybeShowToggleShortcutHint(context: vscode.ExtensionContext) {
+  const hasSeen = context.globalState.get<boolean>(TOGGLE_HINT_KEY, false);
+
+  if (hasSeen) {
+    return;
+  }
+
+  const shortcut = process.platform === "darwin" ? "⌘⌥T" : "Ctrl+Alt+T";
+
+  vscode.window.showInformationMessage(
+    `Tip: You can toggle Tailwind Prism using ${shortcut}`,
+  );
+
+  await context.globalState.update(TOGGLE_HINT_KEY, true);
+}
+
 function isEnabled(): boolean {
   const config = vscode.workspace.getConfiguration("tailwindPrism");
   return config.get<boolean>("enabled", false);
@@ -77,7 +95,7 @@ function updateStatusBar() {
   statusBarItem.show();
 }
 
-async function openStatusBarMenu() {
+async function openStatusBarMenu(context: vscode.ExtensionContext) {
   const config = vscode.workspace.getConfiguration("tailwindPrism");
 
   const enabled = config.get<boolean>("enabled", false);
@@ -85,8 +103,7 @@ async function openStatusBarMenu() {
   const preset = config.get<string>("colorPreset", "Calm");
 
   type MenuItem = vscode.QuickPickItem & {
-    action: "toggle" | "mode" | "preset" | "customize";
-    value?: any;
+    action: "toggle" | "mode" | "preset" | "customize" | "keybindings";
   };
 
   const items: MenuItem[] = [
@@ -107,8 +124,13 @@ async function openStatusBarMenu() {
     },
     {
       label: "Customize Colors…",
-      description: "Open Tailwind Prism color settings",
+      description: "Open Tailwind Prism settings",
       action: "customize",
+    },
+    {
+      label: "Keyboard Shortcuts…",
+      description: "Customize Tailwind Prism keybindings",
+      action: "keybindings",
     },
   ];
 
@@ -135,6 +157,8 @@ async function openStatusBarMenu() {
       }
 
       updateStatusBar();
+
+      await maybeShowToggleShortcutHint(context);
       break;
     }
 
@@ -151,7 +175,15 @@ async function openStatusBarMenu() {
     case "customize": {
       vscode.commands.executeCommand(
         "workbench.action.openSettings",
-        "tailwindPrism.colors",
+        "tailwindPrism",
+      );
+      break;
+    }
+
+    case "keybindings": {
+      vscode.commands.executeCommand(
+        "workbench.action.openGlobalKeybindings",
+        "tailwind-prism",
       );
       break;
     }
@@ -179,33 +211,37 @@ function getPrismColors(): PrismColors {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-  if (isEnabled()) {
-    updateEditor(vscode.window.activeTextEditor);
-  }
+  statusBarItem = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Right,
+    100,
+  );
 
-  const toggle = vscode.commands.registerCommand(
-    "tailwind-prism.toggle",
-    async () => {
+  statusBarItem.text = "$(symbol-color) Tailwind Prism";
+  statusBarItem.command = "tailwind-prism.menu";
+  context.subscriptions.push(statusBarItem);
+
+  updateStatusBar();
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("tailwind-prism.toggle", async () => {
       const config = vscode.workspace.getConfiguration("tailwindPrism");
+
       const next = !config.get<boolean>("enabled", false);
 
       await config.update("enabled", next, vscode.ConfigurationTarget.Global);
 
       if (!next) {
         clearDecorations();
-        return;
+      } else {
+        updateEditor(vscode.window.activeTextEditor);
       }
 
-      updateEditor(vscode.window.activeTextEditor);
       updateStatusBar();
-    },
+    }),
   );
 
-  const selectMode = vscode.commands.registerCommand(
-    "tailwind-prism.selectMode",
-    async () => {
-      const currentMode = getHighlightMode();
-
+  context.subscriptions.push(
+    vscode.commands.registerCommand("tailwind-prism.selectMode", async () => {
       const choice = await vscode.window.showQuickPick<ModePickItem>(
         [
           {
@@ -237,23 +273,8 @@ export function activate(context: vscode.ExtensionContext) {
         );
 
       updateEditor(vscode.window.activeTextEditor);
-    },
+    }),
   );
-
-  statusBarItem = vscode.window.createStatusBarItem(
-    vscode.StatusBarAlignment.Right,
-    100,
-  );
-
-  statusBarItem.command = "tailwind-prism.menu";
-
-  context.subscriptions.push(statusBarItem);
-
-  updateStatusBar();
-
-  context.subscriptions.push(selectMode);
-
-  context.subscriptions.push(toggle);
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
@@ -261,25 +282,43 @@ export function activate(context: vscode.ExtensionContext) {
       selectColorPreset,
     ),
   );
+
   context.subscriptions.push(
-    vscode.commands.registerCommand("tailwind-prism.menu", openStatusBarMenu),
+    vscode.commands.registerCommand("tailwind-prism.menu", () =>
+      openStatusBarMenu(context),
+    ),
   );
 
-  vscode.window.onDidChangeActiveTextEditor(updateEditor);
-  vscode.workspace.onDidChangeTextDocument(() =>
-    updateEditor(vscode.window.activeTextEditor),
+  if (isEnabled()) {
+    updateEditor(vscode.window.activeTextEditor);
+  }
+
+  context.subscriptions.push(
+    vscode.window.onDidChangeActiveTextEditor(updateEditor),
   );
-  vscode.window.onDidChangeTextEditorSelection((e) => {
-    if (getHighlightMode() === "cursor") {
-      updateEditor(e.textEditor);
-    }
-  });
-  vscode.workspace.onDidChangeConfiguration((e) => {
-    if (e.affectsConfiguration("tailwindPrism")) {
-      updateEditor(vscode.window.activeTextEditor);
-      updateStatusBar();
-    }
-  });
+
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeTextDocument(() =>
+      updateEditor(vscode.window.activeTextEditor),
+    ),
+  );
+
+  context.subscriptions.push(
+    vscode.window.onDidChangeTextEditorSelection((e) => {
+      if (getHighlightMode() === "cursor") {
+        updateEditor(e.textEditor);
+      }
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration("tailwindPrism")) {
+        updateEditor(vscode.window.activeTextEditor);
+        updateStatusBar();
+      }
+    }),
+  );
 }
 
 function getTailwindContextAtCursor(
@@ -580,8 +619,6 @@ function clearDecorations() {
 }
 
 async function selectColorPreset() {
-  const config = vscode.workspace.getConfiguration("tailwindPrism");
-
   const qp = vscode.window.createQuickPick<
     vscode.QuickPickItem & { value: string }
   >();
