@@ -6,7 +6,10 @@
   "scripts": {
     "dev:extension": "pnpm --filter tailwind-prism run watch",
     "build:extension": "pnpm --filter tailwind-prism run package",
-    "publish:extension": "cd packages/extension && npx vsce publish"
+    "publish:extension": "cd packages/extension && npx vsce publish",
+    "dev:web": "pnpm --filter web run dev",
+    "build:web": "pnpm --filter web run build",
+    "start:web": "pnpm --filter web run start"
   },
   "devDependencies": {},
   "packageManager": "pnpm@10.0.0"
