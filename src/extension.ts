@@ -6,21 +6,92 @@ type ModePickItem = vscode.QuickPickItem & {
   value: HighlightMode;
 };
 
-let enabled = false;
-let decorations: vscode.TextEditorDecorationType[] = [];
+type PrismColors = {
+  variant: string;
+  important: string;
+  arbitrary: string;
+  utility: string;
+};
+
+const PRESETS: Record<string, PrismColors> = {
+  Clear: {
+    variant: "#2563EB",
+    important: "#DC2626",
+    arbitrary: "#B45309",
+    utility: "#1F2937",
+  },
+  Soft: {
+    variant: "#4F46E5",
+    important: "#E11D48",
+    arbitrary: "#CA8A04",
+    utility: "#374151",
+  },
+  Calm: {
+    variant: "#7FB4FF",
+    important: "#FF6B81",
+    arbitrary: "#F2C97D",
+    utility: "#D1D7E0",
+  },
+  Contrast: {
+    variant: "#93C5FD",
+    important: "#FB7185",
+    arbitrary: "#FACC15",
+    utility: "#E5E7EB",
+  },
+  Muted: {
+    variant: "#9CA3AF",
+    important: "#F87171",
+    arbitrary: "#D4B483",
+    utility: "#9CA3AF",
+  },
+};
+
+let decorationTypes: {
+  variant: vscode.TextEditorDecorationType;
+  important: vscode.TextEditorDecorationType;
+  arbitrary: vscode.TextEditorDecorationType;
+  utility: vscode.TextEditorDecorationType;
+} | null = null;
+
+function isEnabled(): boolean {
+  const config = vscode.workspace.getConfiguration("tailwindPrism");
+  return config.get<boolean>("enabled", false);
+}
 
 function getHighlightMode(): "full" | "cursor" {
   const config = vscode.workspace.getConfiguration("tailwindPrism");
   return config.get<"full" | "cursor">("highlightMode", "full");
 }
 
+function getPrismColors(): PrismColors {
+  const config = vscode.workspace.getConfiguration("tailwindPrism");
+
+  const presetName = config.get<string>("colorPreset", "Calm");
+
+  const preset = PRESETS[presetName] ?? PRESETS.Calm;
+
+  return {
+    variant: config.get<string>("colors.variant") || preset.variant,
+    important: config.get<string>("colors.important") || preset.important,
+    arbitrary: config.get<string>("colors.arbitrary") || preset.arbitrary,
+    utility: config.get<string>("colors.utility") || preset.utility,
+  };
+}
+
 export function activate(context: vscode.ExtensionContext) {
+  if (isEnabled()) {
+    updateEditor(vscode.window.activeTextEditor);
+  }
+
   const toggle = vscode.commands.registerCommand(
     "tailwind-prism.toggle",
-    () => {
-      enabled = !enabled;
+    async () => {
+      const config = vscode.workspace.getConfiguration("tailwindPrism");
+      const next = !config.get<boolean>("enabled", false);
 
-      if (!enabled) {
+      await config.update("enabled", next, vscode.ConfigurationTarget.Global);
+
+      if (!next) {
         clearDecorations();
         return;
       }
@@ -72,12 +143,25 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(toggle);
 
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "tailwind-prism.selectPreset",
+      selectColorPreset,
+    ),
+  );
   vscode.window.onDidChangeActiveTextEditor(updateEditor);
   vscode.workspace.onDidChangeTextDocument(() =>
     updateEditor(vscode.window.activeTextEditor),
   );
   vscode.window.onDidChangeTextEditorSelection((e) => {
-    updateEditor(e.textEditor);
+    if (getHighlightMode() === "cursor") {
+      updateEditor(e.textEditor);
+    }
+  });
+  vscode.workspace.onDidChangeConfiguration((e) => {
+    if (e.affectsConfiguration("tailwindPrism")) {
+      updateEditor(vscode.window.activeTextEditor);
+    }
   });
 }
 
@@ -127,7 +211,7 @@ function getTailwindContextAtCursor(
 function updateEditor(editor?: vscode.TextEditor) {
   const highlightMode = getHighlightMode();
 
-  if (!enabled || !editor) {
+  if (!isEnabled() || !editor) {
     return;
   }
 
@@ -337,34 +421,117 @@ function applyDecorations(
     utilityRanges: vscode.Range[];
   },
 ) {
-  const variant = vscode.window.createTextEditorDecorationType({
-    color: "#7FB4FF",
-    fontStyle: "italic",
-  });
+  const colors = getPrismColors();
 
-  const important = vscode.window.createTextEditorDecorationType({
-    color: "#FF6B81",
-    fontWeight: "600",
-  });
+  if (!decorationTypes) {
+    decorationTypes = {
+      variant: vscode.window.createTextEditorDecorationType({
+        color: colors.variant,
+        fontStyle: "italic",
+      }),
+      important: vscode.window.createTextEditorDecorationType({
+        color: colors.important,
+        fontWeight: "600",
+      }),
+      arbitrary: vscode.window.createTextEditorDecorationType({
+        color: colors.arbitrary,
+      }),
+      utility: vscode.window.createTextEditorDecorationType({
+        color: colors.utility,
+        fontWeight: "500",
+      }),
+    };
+  }
 
-  const arbitrary = vscode.window.createTextEditorDecorationType({
-    color: "#F2C97D",
-  });
-
-  const utility = vscode.window.createTextEditorDecorationType({
-    color: "#D1D7E0",
-    fontWeight: "500",
-  });
-
-  decorations.push(variant, important, arbitrary, utility);
-
-  editor.setDecorations(variant, ranges.variantRanges);
-  editor.setDecorations(important, ranges.importantRanges);
-  editor.setDecorations(arbitrary, ranges.arbitraryRanges);
-  editor.setDecorations(utility, ranges.utilityRanges);
+  editor.setDecorations(decorationTypes.variant, ranges.variantRanges);
+  editor.setDecorations(decorationTypes.important, ranges.importantRanges);
+  editor.setDecorations(decorationTypes.arbitrary, ranges.arbitraryRanges);
+  editor.setDecorations(decorationTypes.utility, ranges.utilityRanges);
 }
 
 function clearDecorations() {
-  decorations.forEach((d) => d.dispose());
-  decorations = [];
+  if (!decorationTypes) {
+    return;
+  }
+
+  decorationTypes.variant.dispose();
+  decorationTypes.important.dispose();
+  decorationTypes.arbitrary.dispose();
+  decorationTypes.utility.dispose();
+
+  decorationTypes = null;
+}
+
+async function selectColorPreset() {
+  const config = vscode.workspace.getConfiguration("tailwindPrism");
+
+  const qp = vscode.window.createQuickPick<
+    vscode.QuickPickItem & { value: string }
+  >();
+
+  qp.title = "Tailwind Prism - Color Presets";
+  qp.placeholder = "Use ↑ ↓ to navigate, Enter to confirm";
+
+  qp.items = [
+    {
+      label: "Clear",
+      description: "Light mode · High readability",
+      value: "Clear",
+    },
+    {
+      label: "Soft",
+      description: "Light mode · Gentle contrast",
+      value: "Soft",
+    },
+    {
+      label: "Calm",
+      description: "Dark mode · Balanced (recommended)",
+      value: "Calm",
+    },
+    {
+      label: "Contrast",
+      description: "Dark mode · High contrast",
+      value: "Contrast",
+    },
+    {
+      label: "Muted",
+      description: "Dark mode · Low visual noise",
+      value: "Muted",
+    },
+    {
+      label: "Customize…",
+      description: "Open Tailwind Prism color settings",
+      value: "__customize__",
+    },
+  ];
+
+  // CONFIRM
+  qp.onDidAccept(async () => {
+    const item = qp.selectedItems[0];
+    if (!item) {
+      return;
+    }
+
+    if (item.value === "__customize__") {
+      vscode.commands.executeCommand(
+        "workbench.action.openSettings",
+        "tailwindPrism.colors",
+      );
+      qp.hide();
+      return;
+    }
+
+    await vscode.workspace
+      .getConfiguration("tailwindPrism")
+      .update("colorPreset", item.value, vscode.ConfigurationTarget.Global);
+
+    qp.hide();
+  });
+
+  // CANCEL -> REVERT
+  qp.onDidHide(() => {
+    qp.dispose();
+  });
+
+  qp.show();
 }

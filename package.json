@@ -22,11 +22,20 @@
       {
         "command": "tailwind-prism.selectMode",
         "title": "Tailwind Prism: Select Highlight Mode"
+      },
+      {
+        "command": "tailwind-prism.selectPreset",
+        "title": "Tailwind Prism: Select Color Preset"
       }
     ],
     "configuration": {
       "title": "Tailwind Prism",
       "properties": {
+        "tailwindPrism.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable or disable Tailwind Prism highlighting."
+        },
         "tailwindPrism.highlightMode": {
           "type": "string",
           "enum": [
@@ -35,6 +44,38 @@
           ],
           "default": "full",
           "description": "Controls how Tailwind Prism highlights classnames."
+        },
+        "tailwindPrism.colorPreset": {
+          "type": "string",
+          "enum": [
+            "Clear",
+            "Soft",
+            "Calm",
+            "Contrast",
+            "Muted"
+          ],
+          "default": "Calm",
+          "description": "Color preset used by Tailwind Prism."
+        },
+        "tailwindPrism.colors.variant": {
+          "type": "string",
+          "default": "",
+          "description": "Override color for Tailwind variants (hover:, sm:, etc)."
+        },
+        "tailwindPrism.colors.important": {
+          "type": "string",
+          "default": "",
+          "description": "Override color for !important Tailwind utilities."
+        },
+        "tailwindPrism.colors.arbitrary": {
+          "type": "string",
+          "default": "",
+          "description": "Override color for arbitrary selectors ([data-*])."
+        },
+        "tailwindPrism.colors.utility": {
+          "type": "string",
+          "default": "",
+          "description": "Override color for regular Tailwind utilities."
         }
       }
     }
