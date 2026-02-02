@@ -5,6 +5,7 @@
   --font-mono: var(--font-geist-mono);
   --color-ring: var(--ring);
   --color-border: var(--border);
+  --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
@@ -25,6 +26,7 @@
   --foreground: oklch(0.145 0 0);
   --primary: var(--color-neutral-900);
   --primary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
   --border: oklch(0.922 0 0);
 }
