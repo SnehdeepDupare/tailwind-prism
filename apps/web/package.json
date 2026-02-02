@@ -11,7 +11,9 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,mdx,css}\" --cache"
   },
   "dependencies": {
+    "@tabler/icons-react": "^3.36.1",
     "clsx": "^2.1.1",
+    "motion": "^12.29.3",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
