@@ -1,12 +1,21 @@
+"use client";
+
+import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/constants/site";
 import { IconBrandGithub, IconBrandX } from "@tabler/icons-react";
+import { motion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 
 export const Footer = () => {
   return (
-    <footer className="flex items-center justify-between border-t px-5 py-4">
+    <motion.footer
+      initial={{ opacity: 0, filter: "blur(10px)" }}
+      whileInView={{ opacity: 1, filter: "blur(0px)" }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+      viewport={{ once: true }}
+      className="flex items-center justify-between border-t px-5 py-4"
+    >
       <div>
         <Link href="/">
           <Image
@@ -55,6 +64,6 @@ export const Footer = () => {
           </Link>
         </Button>
       </div>
-    </footer>
+    </motion.footer>
   );
 };
