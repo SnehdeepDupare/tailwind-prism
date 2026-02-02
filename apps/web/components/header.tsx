@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export const Header = () => {
   return (
@@ -22,9 +23,12 @@ export const Header = () => {
         />
       </Link>
 
-      <button className="bg-primary text-primary-foreground cursor-pointer rounded-md px-4 py-2 text-sm font-medium">
+      <Button
+        size="lg"
+        className="rounded-md border bg-linear-to-b from-neutral-700 to-neutral-800 px-4 py-2.5 shadow-md hover:shadow-lg"
+      >
         Download
-      </button>
+      </Button>
     </motion.header>
   );
 };

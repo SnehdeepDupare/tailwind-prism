@@ -1,6 +1,10 @@
 "use client";
 
 import { motion } from "motion/react";
+import { Button } from "@/components/ui/button";
+import { siteConfig } from "@/constants/site";
+import Link from "next/link";
+import { IconArrowUpRight } from "@tabler/icons-react";
 
 export const Hero = () => {
   return (
@@ -28,14 +32,30 @@ export const Hero = () => {
         initial={{ opacity: 0, filter: "blur(10px)", y: 10 }}
         animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
         transition={{ duration: 0.3, ease: "easeInOut", delay: 0.2 }}
-        className="mt-4 flex gap-2"
+        className="mt-4 flex flex-col items-center gap-2 sm:flex-row"
       >
-        <button className="bg-primary text-primary-foreground cursor-pointer rounded-md px-4 py-2 text-sm font-medium">
+        <Button
+          className="w-full rounded-md border bg-linear-to-b from-neutral-700 to-neutral-800 px-4 py-2.5 shadow-[0_6px_16px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_2px_rgba(0,0,0,0.5)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_2px_rgba(0,0,0,0.5)] sm:w-fit"
+          size="lg"
+        >
           Install from VS Code Marketplace
-        </button>
-        <button className="cursor-pointer rounded-md bg-neutral-100 px-4 py-2 text-sm font-medium">
-          View on GitHub
-        </button>
+        </Button>
+
+        <Button
+          asChild
+          size="lg"
+          variant="secondary"
+          className="w-full rounded-md bg-linear-to-b from-neutral-50 to-neutral-100 px-4 py-2.5 font-medium shadow-md sm:w-fit"
+        >
+          <Link
+            href={siteConfig.links.github}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View on GitHub
+            <IconArrowUpRight />
+          </Link>
+        </Button>
       </motion.div>
     </section>
   );
