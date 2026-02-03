@@ -3,7 +3,7 @@
   "displayName": "Tailwind Prism",
   "description": "Semantic syntax highlighting for Tailwind CSS",
   "publisher": "Snehdeep",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.108.1"
   },
@@ -110,7 +110,9 @@
     "test": "vscode-test",
     "build": "pnpm run package",
     "prepublish": "pnpm run package",
-    "publish": "npx @vscode/vsce publish --no-dependencies"
+    "publish:vscode": "npx @vscode/vsce publish --no-dependencies",
+    "publish:openvsx": "ovsx publish --no-dependencies",
+    "publish": "npm run publish:vscode && npm run publish:openvsx"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
