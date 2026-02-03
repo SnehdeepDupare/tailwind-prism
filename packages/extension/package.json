@@ -108,7 +108,9 @@
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vscode-test",
-    "build": "pnpm run package"
+    "build": "pnpm run package",
+    "prepublish": "pnpm run package",
+    "publish": "npx @vscode/vsce publish --no-dependencies"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
