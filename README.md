@@ -7,7 +7,7 @@ A pnpm workspace containing the Tailwind Prism VS Code extension and future web 
 ```
 .
 ├── apps/
-│   └── web/           # Next.js app (future)
+│   └── web/           # Website
 ├── packages/
 │   └── extension/     # VS Code extension
 ├── package.json       # Root workspace config

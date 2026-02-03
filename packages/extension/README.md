@@ -73,6 +73,6 @@ It does not:
 
 It simply adds clarity, so you can reason about Tailwind CSS faster.
 
-## Licenese:
+## License
 
-MIT
+Licensed under the [MIT license](https://github.com/SnehdeepDupare/tailwind-prism/blob/main/LICENSE.md).
