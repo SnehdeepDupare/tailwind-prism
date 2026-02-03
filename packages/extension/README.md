@@ -1,71 +1,78 @@
-# tailwind-prism README
+# Tailwind Prism
 
-This is the README for your extension "tailwind-prism". After writing up a brief description, we recommend including the following sections.
+Tailwind Prism is a VS Code extension that makes long Tailwind CSS class strings readable again by adding subtle, semantic syntax highlighting.
+
+It highlights Tailwind utilities based on what they mean, variants, modifiers, arbitrary values so you can scan and edit complex class lists faster, without changing how your editor works.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- Semantic Tailwind highlighting: Variants (hover:, sm:), important modifiers (!), arbitrary values ([data-*]), and utilities are highlighted distinctly.
 
-For example if there is an image subfolder under your extension project workspace:
+- Full file or cursor mode: Highlight all Tailwind classes in a file, or only the active class block under your cursor.
 
-\!\[feature X\]\(images/feature-x.png\)
+- Toggle anytime: Enable or disable Tailwind Prism instantly using a command or keyboard shortcut.
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+- Color presets & customization: Includes built-in color presets for light and dark themes, with full control over individual colors if needed.
 
-## Requirements
+- Works with real-world patterns: Supports className, cn(), clsx(), classnames(), template literals, and conditional class logic.
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- Lightweight & non-intrusive: No linting, no formatting, no code transformations. Tailwind Prism only improves readability.
 
-## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+## Usage
 
-For example:
+Once installed, Tailwind Prism can be enabled or disabled at any time.
 
-This extension contributes the following settings:
+- Toggle highlighting via the command palette
+- Switch between Full file and Cursor only highlight modes
+- Change color presets or customize colors in settings
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+All behavior is opt-in and configurable.
 
-## Known Issues
+## Keyboard Shortcut
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+By default:
 
-## Release Notes
+- Windows / Linux: `Ctrl + Alt + T`
+- macOS: `Cmd + Alt + T`
 
-Users appreciate release notes as you update your extension.
+You can customize this shortcut in VS Code keyboard settings.
 
-### 1.0.0
+## Configuration
 
-Initial release of ...
+Tailwind Prism provides the following settings:
 
-### 1.0.1
+- Enable or disable highlighting
+- Choose highlight mode (full file or cursor)
+- Select a color preset
+- Override individual colors for:
+    - variants
+    - important modifiers
+    - arbitrary values
+    - utilities
 
-Fixed issue #.
+All settings are available under Settings → Tailwind Prism.
 
-### 1.1.0
+## Compatibility
 
-Added features X, Y, and Z.
+- Visual Studio Code
+- Cursor
+- Windsurf
 
----
+(All VS Code–compatible editors using the VS Code Marketplace)
 
-## Following extension guidelines
+## Philosophy
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+Tailwind Prism is intentionally focused.
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
+It does not:
+- lint
+- autocomplete
+- format
+- enforce opinions
 
-## Working with Markdown
+It simply adds clarity, so you can reason about Tailwind CSS faster.
 
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
+## Licenese:
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+MIT
