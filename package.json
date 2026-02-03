@@ -1,117 +1,18 @@
 {
-  "name": "tailwind-prism",
-  "displayName": "Tailwind Prism",
-  "description": "Semantic syntax highlighting for Tailwind CSS",
-  "version": "0.0.1",
-  "engines": {
-    "vscode": "^1.108.1"
-  },
-  "categories": [
-    "Other"
-  ],
-  "activationEvents": [
-    "onStartupFinished"
-  ],
-  "main": "./dist/extension.js",
-  "contributes": {
-    "commands": [
-      {
-        "command": "tailwind-prism.toggle",
-        "title": "Tailwind Prism: Toggle Highlighting"
-      },
-      {
-        "command": "tailwind-prism.selectMode",
-        "title": "Tailwind Prism: Select Highlight Mode"
-      },
-      {
-        "command": "tailwind-prism.selectPreset",
-        "title": "Tailwind Prism: Select Color Preset"
-      }
-    ],
-    "configuration": {
-      "title": "Tailwind Prism",
-      "properties": {
-        "tailwindPrism.enabled": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable or disable Tailwind Prism highlighting."
-        },
-        "tailwindPrism.highlightMode": {
-          "type": "string",
-          "enum": [
-            "full",
-            "cursor"
-          ],
-          "default": "full",
-          "description": "Controls how Tailwind Prism highlights classnames."
-        },
-        "tailwindPrism.colorPreset": {
-          "type": "string",
-          "enum": [
-            "Clear",
-            "Soft",
-            "Calm",
-            "Contrast",
-            "Muted"
-          ],
-          "default": "Calm",
-          "description": "Color preset used by Tailwind Prism."
-        },
-        "tailwindPrism.colors.variant": {
-          "type": "string",
-          "default": "",
-          "description": "Override color for Tailwind variants (hover:, sm:, etc)."
-        },
-        "tailwindPrism.colors.important": {
-          "type": "string",
-          "default": "",
-          "description": "Override color for !important Tailwind utilities."
-        },
-        "tailwindPrism.colors.arbitrary": {
-          "type": "string",
-          "default": "",
-          "description": "Override color for arbitrary selectors ([data-*])."
-        },
-        "tailwindPrism.colors.utility": {
-          "type": "string",
-          "default": "",
-          "description": "Override color for regular Tailwind utilities."
-        }
-      }
-    },
-    "keybindings": [
-      {
-        "command": "tailwind-prism.toggle",
-        "key": "ctrl+alt+t",
-        "mac": "cmd+alt+t",
-        "when": "editorTextFocus"
-      }
-    ]
-  },
+  "name": "tailwind-prism-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Tailwind Prism monorepo",
   "scripts": {
-    "vscode:prepublish": "pnpm run package",
-    "compile": "pnpm run check-types && pnpm run lint && node esbuild.js",
-    "watch": "npm-run-all -p watch:*",
-    "watch:esbuild": "node esbuild.js --watch",
-    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "package": "pnpm run check-types && pnpm run lint && node esbuild.js --production",
-    "compile-tests": "tsc -p . --outDir out",
-    "watch-tests": "tsc -p . -w --outDir out",
-    "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
-    "check-types": "tsc --noEmit",
-    "lint": "eslint src",
-    "test": "vscode-test"
+    "dev:extension": "pnpm --filter tailwind-prism run watch",
+    "build:extension": "pnpm --filter tailwind-prism run package",
+    "publish:extension": "cd packages/extension && npx vsce publish",
+    "dev:web": "pnpm --filter web run dev",
+    "build:web": "pnpm --filter web run build",
+    "start:web": "pnpm --filter web run start",
+    "format:fix:web": "pnpm --filter web run format:fix",
+    "format:check:web": "pnpm --filter web run format:check"
   },
-  "devDependencies": {
-    "@types/vscode": "^1.108.1",
-    "@types/mocha": "^10.0.10",
-    "@types/node": "22.x",
-    "typescript-eslint": "^8.52.0",
-    "eslint": "^9.39.2",
-    "esbuild": "^0.27.2",
-    "npm-run-all": "^4.1.5",
-    "typescript": "^5.9.3",
-    "@vscode/test-cli": "^0.0.12",
-    "@vscode/test-electron": "^2.5.2"
-  }
+  "devDependencies": {},
+  "packageManager": "pnpm@10.0.0"
 }
