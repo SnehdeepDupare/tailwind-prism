@@ -8,7 +8,7 @@ import { IconArrowUpRight } from "@tabler/icons-react";
 
 export const Hero = () => {
   return (
-    <section className="px-5 pt-20">
+    <section className="px-4 pt-20">
       <motion.h1
         initial={{ opacity: 0, filter: "blur(10px)", y: 10 }}
         animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}

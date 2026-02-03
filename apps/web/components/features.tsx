@@ -6,7 +6,7 @@ import { FEATURES } from "@/constants";
 
 export const Features = () => {
   return (
-    <section className="mt-14 px-5">
+    <section className="mt-14 px-4">
       <motion.h2
         initial={{ opacity: 0, filter: "blur(10px)", y: 20 }}
         whileInView={{ opacity: 1, filter: "blur(0px)", y: 0 }}

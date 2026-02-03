@@ -14,7 +14,7 @@ export const Footer = () => {
       whileInView={{ opacity: 1, filter: "blur(0px)" }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
       viewport={{ once: true }}
-      className="flex items-center justify-between border-t px-5 py-4"
+      className="flex items-center justify-between border-t p-4"
     >
       <div>
         <Link href="/">

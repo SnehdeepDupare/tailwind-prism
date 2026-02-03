@@ -12,7 +12,7 @@ export const Header = () => {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="bg-background sticky top-0 z-50 mx-auto flex h-14 w-full max-w-5xl items-center justify-between border-b px-5"
+      className="bg-background sticky top-0 z-50 flex h-14 w-full items-center justify-between border-b px-4"
     >
       <Link href="/">
         <Image
