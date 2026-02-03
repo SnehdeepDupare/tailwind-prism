@@ -1,7 +1,7 @@
 export const siteConfig = {
   name: "Tailwind Prism",
-  url: "",
-  ogImage: "",
+  url: "http://localhost:3000",
+  ogImage: "http://localhost:3000/og.jpg",
   description:
     "Semantic syntax highlighting for your Tailwind CSS classes, so you don't get confused again and edit long classes without slowing down.",
   links: {
