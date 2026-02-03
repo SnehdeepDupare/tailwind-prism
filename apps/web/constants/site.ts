@@ -8,6 +8,8 @@ export const siteConfig = {
     twitter: "https://x.com/Snehdeep__",
     github: "https://github.com/SnehdeepDupare/tailwind-prism",
     portfolio: "https://snehdeepdupare.in",
+    marketplace:
+      "https://marketplace.visualstudio.com/items?itemName=Snehdeep.tailwind-prism",
   },
 };
 

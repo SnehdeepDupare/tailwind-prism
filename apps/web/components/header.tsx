@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { siteConfig } from "@/constants/site";
 
 export const Header = () => {
   return (
@@ -24,10 +25,17 @@ export const Header = () => {
       </Link>
 
       <Button
+        asChild
         size="lg"
         className="rounded-md border bg-linear-to-b from-neutral-700 to-neutral-800 px-4 py-2.5 shadow-md hover:shadow-lg"
       >
-        Download
+        <Link
+          href={siteConfig.links.marketplace}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Download
+        </Link>
       </Button>
     </motion.header>
   );
