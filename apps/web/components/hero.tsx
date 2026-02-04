@@ -24,7 +24,7 @@ export const Hero = () => {
         initial={{ opacity: 0, filter: "blur(10px)", y: 10 }}
         animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="text-3xl font-bold tracking-tight text-neutral-900 text-shadow-md md:text-5xl"
+        className="text-3xl font-bold tracking-tight text-neutral-900 text-shadow-sm md:text-5xl"
       >
         Make Tailwind classes readable again.
       </motion.h1>
@@ -68,25 +68,43 @@ export const Hero = () => {
             </PopoverHeader>
 
             <div className="flex flex-col">
-              {DOWNLOAD_LINKS.map(({ icon: Icon, ...link }) => (
-                <Button
-                  key={link.title}
-                  variant="ghost"
-                  asChild
-                  size="lg"
-                  className="justify-start"
-                >
-                  <Link
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2"
+              {DOWNLOAD_LINKS.map(({ icon: Icon, ...link }) => {
+                const disabled = link.label === "Coming Soon";
+
+                return disabled ? (
+                  <Button
+                    key={link.title}
+                    variant="ghost"
+                    size="lg"
+                    disabled
+                    className="justify-start opacity-50"
                   >
                     <Icon className="size-4" />
                     {link.title}
-                  </Link>
-                </Button>
-              ))}
+                    <span className="ml-auto text-xs text-neutral-500">
+                      {link.label}
+                    </span>
+                  </Button>
+                ) : (
+                  <Button
+                    key={link.title}
+                    variant="ghost"
+                    asChild
+                    size="lg"
+                    className="justify-start"
+                  >
+                    <Link
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2"
+                    >
+                      <Icon className="size-4" />
+                      {link.title}
+                    </Link>
+                  </Button>
+                );
+              })}
             </div>
           </PopoverContent>
         </Popover>
@@ -106,6 +124,14 @@ export const Hero = () => {
           </Link>
         </Button>
       </motion.div>
+      <motion.p
+        initial={{ opacity: 0, filter: "blur(10px)", y: 10 }}
+        animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+        transition={{ duration: 0.3, ease: "easeInOut", delay: 0.2 }}
+        className="text-muted-foreground mt-2 text-xs"
+      >
+        Available on VS Code and Windsurf. Cursor support is rolling out.
+      </motion.p>
     </section>
   );
 };

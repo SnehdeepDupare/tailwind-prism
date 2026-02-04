@@ -1,6 +1,5 @@
 import { Icons } from "@/components/icons";
-import { siteConfig } from "./site";
-
+import { siteConfig } from "@/constants/site";
 import {
   IconStack3,
   IconCursorText,
@@ -56,13 +55,14 @@ export const DOWNLOAD_LINKS = [
     icon: Icons.vscode,
   },
   {
-    title: "Cursor",
-    url: siteConfig.links.openVsxMarketplace,
-    icon: Icons.cursor,
-  },
-  {
     title: "Windsurf",
     url: siteConfig.links.openVsxMarketplace,
     icon: Icons.windsurf,
+  },
+  {
+    title: "Cursor",
+    url: siteConfig.links.openVsxMarketplace,
+    icon: Icons.cursor,
+    label: "Coming Soon",
   },
 ];
