@@ -5,7 +5,7 @@
   "publisher": "Snehdeep",
   "version": "0.0.3",
   "engines": {
-    "vscode": "^1.108.1"
+    "vscode": "^1.105.0"
   },
   "categories": [
     "Other"
@@ -19,6 +19,7 @@
   "activationEvents": [
     "onStartupFinished"
   ],
+  "homepage": "https://tailwind-prism.snehdeepdupare.in",
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
