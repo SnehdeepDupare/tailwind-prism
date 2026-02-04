@@ -314,7 +314,15 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("tailwindPrism")) {
-        updateEditor(vscode.window.activeTextEditor);
+        const config = vscode.workspace.getConfiguration("tailwindPrism");
+        const enabled = config.get<boolean>("enabled", false);
+
+        if (!enabled) {
+          clearDecorations();
+        } else if (isEnabled()) {
+          updateEditor(vscode.window.activeTextEditor);
+        }
+
         updateStatusBar();
       }
     }),
@@ -368,6 +376,7 @@ function updateEditor(editor?: vscode.TextEditor) {
   const highlightMode = getHighlightMode();
 
   if (!isEnabled() || !editor) {
+    clearDecorations();
     return;
   }
 
@@ -688,4 +697,8 @@ async function selectColorPreset() {
   });
 
   qp.show();
+}
+
+export function deactivate() {
+  clearDecorations();
 }
