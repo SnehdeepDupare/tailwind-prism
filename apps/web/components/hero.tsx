@@ -56,7 +56,10 @@ export const Hero = () => {
             </Button>
           </PopoverTrigger>
 
-          <PopoverContent align={isMobile ? "center" : "start"} className="p-1">
+          <PopoverContent
+            align={isMobile ? "center" : "start"}
+            className="p-1 md:w-56"
+          >
             <PopoverHeader>
               <PopoverTitle className="sr-only">Install for</PopoverTitle>
               <PopoverDescription className="sr-only">
@@ -79,7 +82,7 @@ export const Hero = () => {
                     rel="noopener noreferrer"
                     className="flex items-center gap-2"
                   >
-                    <Icon />
+                    <Icon className="size-4" />
                     {link.title}
                   </Link>
                 </Button>
