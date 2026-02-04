@@ -24,7 +24,7 @@ export const Hero = () => {
         initial={{ opacity: 0, filter: "blur(10px)", y: 10 }}
         animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="text-3xl font-bold tracking-tight text-neutral-900 text-shadow-sm md:text-5xl"
+        className="text-3xl font-bold tracking-tight text-balance text-neutral-900 text-shadow-sm md:text-5xl"
       >
         Make Tailwind classes readable again.
       </motion.h1>
@@ -48,11 +48,11 @@ export const Hero = () => {
         <Popover>
           <PopoverTrigger asChild>
             <Button
-              className="w-full gap-2 rounded-md border-0 bg-linear-to-b from-neutral-700 to-neutral-800 px-4 py-2.5 shadow-[0_4px_12px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_2px_rgba(0,0,0,0.5)] transition-all duration-200 ease-in-out hover:shadow-[0_6px_16px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_2px_rgba(0,0,0,0.5)] active:scale-[0.98] sm:w-fit"
+              className="relative w-full gap-2 rounded-md border-0 bg-linear-to-b from-neutral-700 to-neutral-800 px-4 py-2.5 shadow-[0_4px_12px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_2px_rgba(0,0,0,0.5)] transition-all duration-200 ease-in-out hover:shadow-[0_6px_16px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_2px_rgba(0,0,0,0.5)] active:scale-[0.98] sm:w-fit"
               size="lg"
             >
               Install Tailwind Prism
-              <IconCaretDownFilled className="size-4" />
+              <IconCaretDownFilled className="absolute right-4 size-4 sm:static" />
             </Button>
           </PopoverTrigger>
 
