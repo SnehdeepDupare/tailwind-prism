@@ -48,7 +48,7 @@ export const Hero = () => {
         <Popover>
           <PopoverTrigger asChild>
             <Button
-              className="w-full gap-2 rounded-md bg-linear-to-b from-neutral-700 to-neutral-800 px-4 py-2.5 shadow-[0_4px_12px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_2px_rgba(0,0,0,0.5)] transition-all duration-200 ease-in-out hover:shadow-[0_6px_16px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_2px_rgba(0,0,0,0.5)] active:scale-[0.98] sm:w-fit"
+              className="w-full gap-2 rounded-md border-0 bg-linear-to-b from-neutral-700 to-neutral-800 px-4 py-2.5 shadow-[0_4px_12px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_2px_rgba(0,0,0,0.5)] transition-all duration-200 ease-in-out hover:shadow-[0_6px_16px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_2px_rgba(0,0,0,0.5)] active:scale-[0.98] sm:w-fit"
               size="lg"
             >
               Install Tailwind Prism
