@@ -1,3 +1,6 @@
+import { Icons } from "@/components/icons";
+import { siteConfig } from "./site";
+
 export const FEATURES = [
   {
     title: "Semantic Highlighting",
@@ -38,5 +41,23 @@ export const FEATURES = [
     title: "Respects Your Editor Theme",
     description:
       "Designed to work alongside your existing VS Code theme, not fight it.",
+  },
+];
+
+export const DOWNLOAD_LINKS = [
+  {
+    title: "VS Code",
+    url: siteConfig.links.vscodeMarketplace,
+    icon: Icons.vscode,
+  },
+  {
+    title: "Cursor",
+    url: siteConfig.links.openVsxMarketplace,
+    icon: Icons.cursor,
+  },
+  {
+    title: "Windsurf",
+    url: siteConfig.links.openVsxMarketplace,
+    icon: Icons.windsurf,
   },
 ];

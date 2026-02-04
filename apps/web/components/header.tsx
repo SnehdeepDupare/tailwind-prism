@@ -30,7 +30,7 @@ export const Header = () => {
         className="rounded-md border bg-linear-to-b from-neutral-700 to-neutral-800 px-4 py-2.5 shadow-md hover:shadow-lg"
       >
         <Link
-          href={siteConfig.links.marketplace}
+          href={siteConfig.links.vscodeMarketplace}
           target="_blank"
           rel="noopener noreferrer"
         >
