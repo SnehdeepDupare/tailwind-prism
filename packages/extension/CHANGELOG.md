@@ -2,8 +2,16 @@
 
 All notable changes to the "tailwind-prism" extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+---
 
-## [Unreleased]
+## 0.0.41
 
-- Initial release
+- Fix extension enable/disable flicker
+- Improve install compatibility with VS Code forks (Windsurf, Cursor)
+- Cursor support is rolling out soon
+
+---
+
+## 0.0.1
+
+- Initial public release
