@@ -34,7 +34,7 @@ export const Header = () => {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Download
+          Install
         </Link>
       </Button>
     </motion.header>
