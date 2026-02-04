@@ -4,7 +4,7 @@ Tailwind Prism is a VS Code extension that makes long Tailwind CSS class strings
 
 It highlights Tailwind utilities based on what they mean, variants, modifiers, arbitrary values, so you can scan and edit complex class lists faster, without changing how your editor works.
 
-![Tailwind Prism Demo](https://tailwind-prism.snehdeepdupare.in/assets/tailwind-prism-demo.gif)
+![Tailwind Prism Demo](https://raw.githubusercontent.com/SnehdeepDupare/tailwind-prism/main/packages/extension/images/tailwind-prism-demo.gif)
 
 ## Features
 
@@ -28,7 +28,7 @@ It highlights Tailwind utilities based on what they mean, variants, modifiers, a
 
 ### Color Presets
 
-![Tailwind Prism Color Presets](https://tailwind-prism.snehdeepdupare.in/assets/tailwind-prism-color-preset.png)
+![Tailwind Prism Color Presets](https://raw.githubusercontent.com/SnehdeepDupare/tailwind-prism/main/packages/extension/images/tailwind-prism-color-preset.png)
 
 ## Usage
 
