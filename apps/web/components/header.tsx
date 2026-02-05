@@ -1,18 +1,10 @@
-"use client";
-
-import { motion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export const Header = () => {
   return (
-    <motion.header
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="bg-background sticky top-0 z-50 flex h-14 w-full items-center justify-between border-b px-4"
-    >
+    <header className="bg-background sticky top-0 z-50 flex h-14 w-full items-center justify-between border-b px-4">
       <Link href="/">
         <Image
           src="logo-with-text.svg"
@@ -31,6 +23,6 @@ export const Header = () => {
       >
         <a href="vscode:extension/Snehdeep.tailwind-prism">Install</a>
       </Button>
-    </motion.header>
+    </header>
   );
 };
