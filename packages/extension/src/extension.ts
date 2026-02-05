@@ -55,6 +55,7 @@ let decorationTypes: {
 let statusBarItem: vscode.StatusBarItem;
 
 const TOGGLE_HINT_KEY = "tailwindPrism.hasSeenToggleShortcutHint";
+const FIRST_RUN_KEY = "tailwindPrism.hasCompletedFirstRun";
 
 async function maybeShowToggleShortcutHint(context: vscode.ExtensionContext) {
   const hasSeen = context.globalState.get<boolean>(TOGGLE_HINT_KEY, false);
@@ -210,7 +211,33 @@ function getPrismColors(): PrismColors {
   };
 }
 
-export function activate(context: vscode.ExtensionContext) {
+export async function maybeEnableOnFirstRun(
+  context: vscode.ExtensionContext,
+) {
+  const hasCompleted = context.globalState.get<boolean>(FIRST_RUN_KEY, false);
+
+  if (hasCompleted) {
+    return;
+  }
+
+  const config = vscode.workspace.getConfiguration("tailwindPrism");
+  const enabledSetting = config.inspect<boolean>("enabled");
+  const hasUserValue =
+    enabledSetting?.globalValue !== undefined ||
+    enabledSetting?.workspaceValue !== undefined ||
+    enabledSetting?.workspaceFolderValue !== undefined;
+
+  if (!hasUserValue) {
+    await config.update("enabled", true, vscode.ConfigurationTarget.Global);
+    vscode.window.showInformationMessage(
+      "Tailwind Prism is enabled. You can toggle it anytime using Ctrl+Alt+T or from the status bar.",
+    );
+  }
+
+  await context.globalState.update(FIRST_RUN_KEY, true);
+}
+
+export async function activate(context: vscode.ExtensionContext) {
   statusBarItem = vscode.window.createStatusBarItem(
     vscode.StatusBarAlignment.Right,
     100,
@@ -219,6 +246,8 @@ export function activate(context: vscode.ExtensionContext) {
   statusBarItem.text = "$(symbol-color) Tailwind Prism";
   statusBarItem.command = "tailwind-prism.menu";
   context.subscriptions.push(statusBarItem);
+
+  await maybeEnableOnFirstRun(context);
 
   updateStatusBar();
 
