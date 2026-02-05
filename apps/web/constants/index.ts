@@ -51,18 +51,17 @@ export const FEATURES = [
 export const DOWNLOAD_LINKS = [
   {
     title: "VS Code",
-    url: siteConfig.links.vscodeMarketplace,
+    url: "vscode:extension/Snehdeep.tailwind-prism",
     icon: Icons.vscode,
   },
   {
     title: "Windsurf",
-    url: siteConfig.links.openVsxMarketplace,
+    url: "windsurf:extension/Snehdeep.tailwind-prism",
     icon: Icons.windsurf,
   },
   {
     title: "Cursor",
-    url: siteConfig.links.openVsxMarketplace,
+    url: "cursor:extension/Snehdeep.tailwind-prism",
     icon: Icons.cursor,
-    label: "Coming Soon",
   },
 ];

@@ -69,23 +69,7 @@ export const Hero = () => {
 
             <div className="flex flex-col">
               {DOWNLOAD_LINKS.map(({ icon: Icon, ...link }) => {
-                const disabled = link.label === "Coming Soon";
-
-                return disabled ? (
-                  <Button
-                    key={link.title}
-                    variant="ghost"
-                    size="lg"
-                    disabled
-                    className="justify-start opacity-50"
-                  >
-                    <Icon className="size-4" />
-                    {link.title}
-                    <span className="ml-auto text-xs text-neutral-500">
-                      {link.label}
-                    </span>
-                  </Button>
-                ) : (
+                return (
                   <Button
                     key={link.title}
                     variant="ghost"
@@ -93,15 +77,10 @@ export const Hero = () => {
                     size="lg"
                     className="justify-start"
                   >
-                    <Link
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2"
-                    >
+                    <a href={link.url} className="flex items-center gap-2">
                       <Icon className="size-4" />
                       {link.title}
-                    </Link>
+                    </a>
                   </Button>
                 );
               })}
@@ -124,14 +103,6 @@ export const Hero = () => {
           </Link>
         </Button>
       </motion.div>
-      <motion.p
-        initial={{ opacity: 0, filter: "blur(10px)", y: 10 }}
-        animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-        transition={{ duration: 0.3, ease: "easeInOut", delay: 0.2 }}
-        className="text-muted-foreground mt-2 text-xs"
-      >
-        Available on VS Code and Windsurf. Cursor support is rolling out.
-      </motion.p>
     </section>
   );
 };
