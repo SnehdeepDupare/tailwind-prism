@@ -2,6 +2,11 @@
 
 All notable changes to the "tailwind-prism" extension will be documented in this file.
 
+## 0.5.0
+
+- Add Cursor support
+- Enable extension on first run
+
 ---
 
 ## 0.0.41
