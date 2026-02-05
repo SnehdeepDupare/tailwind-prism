@@ -20,6 +20,7 @@ export const Header = () => {
           width={180}
           height={100}
           className="object-cover"
+          draggable={false}
         />
       </Link>
 
