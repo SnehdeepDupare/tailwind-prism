@@ -31,7 +31,7 @@ export const Hero = () => {
       <motion.p
         initial={{ opacity: 0, filter: "blur(10px)", y: 10 }}
         animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-        transition={{ duration: 0.3, ease: "easeInOut", delay: 0.1 }}
+        transition={{ duration: 0.3, ease: "easeInOut", delay: 0.05 }}
         className="text-muted-foreground mt-4 max-w-2xl text-base"
       >
         Semantic syntax highlighting for your Tailwind CSS classes, so you
@@ -42,7 +42,7 @@ export const Hero = () => {
       <motion.div
         initial={{ opacity: 0, filter: "blur(10px)", y: 10 }}
         animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-        transition={{ duration: 0.3, ease: "easeInOut", delay: 0.2 }}
+        transition={{ duration: 0.3, ease: "easeInOut", delay: 0.1 }}
         className="mt-4 flex flex-col items-center gap-4 sm:flex-row"
       >
         <Popover>

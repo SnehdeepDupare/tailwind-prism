@@ -9,7 +9,7 @@ export const ComparisonSection = () => {
       <motion.div
         initial={{ opacity: 0, filter: "blur(10px)", y: 20 }}
         animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-        transition={{ duration: 0.3, ease: "easeInOut", delay: 0.3 }}
+        transition={{ duration: 0.3, ease: "easeInOut", delay: 0.15 }}
         className="flex items-center justify-center rounded-[30px] border-4 border-[#6C6C6C] bg-[#222222] p-4 md:p-6"
       >
         <div className="flex h-full w-full items-center justify-center rounded-2xl bg-gray-100 p-2 md:p-4">
