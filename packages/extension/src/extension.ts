@@ -18,6 +18,13 @@ type CommentRange = {
   end: number;
 };
 
+type FunctionCallContext = {
+  args: string;
+  argsStart: number;
+  callStart: number;
+  callEnd: number;
+};
+
 const PRESETS: Record<string, PrismColors> = {
   Clear: {
     variant: "#2563EB",
@@ -392,25 +399,17 @@ function getTailwindContextAtCursor(
     }
   }
 
-  // cn / clsx / classnames
-  const fnRegex = /\b(cn|clsx|classnames)\s*\(([\s\S]*?)\)/g;
+  const functionCalls = getTailwindFunctionCalls(text, commentRanges);
 
-  while ((match = fnRegex.exec(text))) {
-    if (isCommentAtOffset(match.index)) {
+  for (const call of functionCalls) {
+    if (isCommentAtOffset(call.callStart)) {
       continue;
     }
 
-    const fullCall = match[0];
-    const args = match[2];
-
-    const callStart = match.index;
-    const callEnd = callStart + fullCall.length;
-
-    // cursor anywhere inside the call
-    if (offset >= callStart && offset <= callEnd) {
+    if (offset >= call.callStart && offset <= call.callEnd) {
       return {
-        value: args, // ENTIRE argument list
-        baseIndex: match.index + match[0].indexOf(args),
+        value: call.args,
+        baseIndex: call.argsStart,
         type: "function",
       };
     }
@@ -513,16 +512,15 @@ function updateEditor(editor?: vscode.TextEditor) {
       processClassString(value, baseIndex, editor.document, ranges);
     }
 
-    // cn / clsx / classnames
-    const fnRegex = /\b(cn|clsx|classnames)\s*\(([\s\S]*?)\)/g;
+    const functionCalls = getTailwindFunctionCalls(text, commentRanges);
 
-    while ((match = fnRegex.exec(text))) {
-      if (isCommentAtOffset(match.index)) {
+    for (const call of functionCalls) {
+      if (isCommentAtOffset(call.callStart)) {
         continue;
       }
 
-      const args = match[2];
-      const argsStart = match.index + match[0].indexOf(args);
+      const args = call.args;
+      const argsStart = call.argsStart;
       const isCommentInArgsAtOffset = createCommentOffsetChecker(commentRanges);
 
       // strings
@@ -536,7 +534,7 @@ function updateEditor(editor?: vscode.TextEditor) {
         }
 
         const value = strMatch[1];
-        const baseIndex = match.index + match[0].indexOf(strMatch[0]) + 1;
+        const baseIndex = argsStart + strMatch.index + 1;
 
         processClassString(value, baseIndex, editor.document, ranges);
       }
@@ -552,7 +550,7 @@ function updateEditor(editor?: vscode.TextEditor) {
         }
 
         const value = tplMatch[1];
-        const baseIndex = match.index + match[0].indexOf(tplMatch[0]) + 1;
+        const baseIndex = argsStart + tplMatch.index + 1;
 
         processTemplateLiteral(value, baseIndex, editor.document, ranges);
       }
@@ -675,20 +673,137 @@ function getCommentRanges(text: string): CommentRange[] {
 }
 
 function createCommentOffsetChecker(commentRanges: CommentRange[]) {
-  return (offset: number) => {
-    return isOffsetInComment(offset, commentRanges);
-  };
+  return (offset: number) => isOffsetInComment(offset, commentRanges);
+}
+
+function getTailwindFunctionCalls(
+  text: string,
+  commentRanges: CommentRange[],
+): FunctionCallContext[] {
+  const calls: FunctionCallContext[] = [];
+  const callStartRegex = /\b(cn|clsx|classnames)\s*\(/g;
+  const isCommentAtOffset = createCommentOffsetChecker(commentRanges);
+
+  let match: RegExpExecArray | null;
+
+  while ((match = callStartRegex.exec(text))) {
+    const callStart = match.index;
+    if (isCommentAtOffset(callStart)) {
+      continue;
+    }
+
+    const openParenIndex = callStart + match[0].length - 1;
+    const closeParenIndex = findMatchingParen(text, openParenIndex, isCommentAtOffset);
+
+    if (closeParenIndex === -1) {
+      continue;
+    }
+
+    const argsStart = openParenIndex + 1;
+    const argsEnd = closeParenIndex;
+
+    calls.push({
+      args: text.slice(argsStart, argsEnd),
+      argsStart,
+      callStart,
+      callEnd: closeParenIndex + 1,
+    });
+
+    callStartRegex.lastIndex = closeParenIndex + 1;
+  }
+
+  return calls;
+}
+
+function findMatchingParen(
+  text: string,
+  openParenIndex: number,
+  isCommentAtOffset: (offset: number) => boolean,
+): number {
+  let depth = 0;
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let inTemplate = false;
+
+  for (let i = openParenIndex; i < text.length; i += 1) {
+    if (isCommentAtOffset(i)) {
+      continue;
+    }
+
+    const char = text[i];
+
+    if (inSingleQuote) {
+      if (char === "'" && !isEscaped(text, i)) {
+        inSingleQuote = false;
+      }
+      continue;
+    }
+
+    if (inDoubleQuote) {
+      if (char === '"' && !isEscaped(text, i)) {
+        inDoubleQuote = false;
+      }
+      continue;
+    }
+
+    if (inTemplate) {
+      if (char === "`" && !isEscaped(text, i)) {
+        inTemplate = false;
+      }
+      continue;
+    }
+
+    if (char === "'") {
+      inSingleQuote = true;
+      continue;
+    }
+
+    if (char === '"') {
+      inDoubleQuote = true;
+      continue;
+    }
+
+    if (char === "`") {
+      inTemplate = true;
+      continue;
+    }
+
+    if (char === "(") {
+      depth += 1;
+      continue;
+    }
+
+    if (char === ")") {
+      depth -= 1;
+
+      if (depth === 0) {
+        return i;
+      }
+    }
+  }
+
+  return -1;
 }
 
 function isOffsetInComment(offset: number, commentRanges: CommentRange[]): boolean {
-  for (const range of commentRanges) {
+  let left = 0;
+  let right = commentRanges.length - 1;
+
+  while (left <= right) {
+    const mid = (left + right) >> 1;
+    const range = commentRanges[mid];
+
     if (offset < range.start) {
-      return false;
+      right = mid - 1;
+      continue;
     }
 
-    if (range.start <= offset && offset < range.end) {
-      return true;
+    if (offset >= range.end) {
+      left = mid + 1;
+      continue;
     }
+
+    return true;
   }
 
   return false;
@@ -731,43 +846,39 @@ function processClassString(
     utilityRanges: vscode.Range[];
   },
 ) {
-  const parts = value.split(/\s+/);
-  let offset = 0;
+  const tokens = tokenizeClassTokens(value);
 
-  for (const part of parts) {
-    if (!part) {
-      continue;
-    }
-
-    const start = baseIndex + offset;
+  for (const token of tokens) {
+    const part = token.value;
+    const start = baseIndex + token.start;
     const startPos = document.positionAt(start);
 
-    // variant: hover:, dark:, sm:
-    const variantMatch = part.match(/^([a-z-]+:)/);
-    if (variantMatch) {
+    const variantPrefixLength = getVariantPrefixLength(part);
+    if (variantPrefixLength > 0) {
       ranges.variantRanges.push(
         new vscode.Range(
           startPos,
-          startPos.translate(0, variantMatch[1].length),
+          startPos.translate(0, variantPrefixLength),
         ),
       );
     }
 
-    // important: !
-    if (part.startsWith("!")) {
+    const importantIndex = variantPrefixLength;
+    if (part[importantIndex] === "!") {
       ranges.importantRanges.push(
-        new vscode.Range(startPos, startPos.translate(0, 1)),
+        new vscode.Range(
+          startPos.translate(0, importantIndex),
+          startPos.translate(0, importantIndex + 1),
+        ),
       );
     }
 
-    // arbitrary: [state=open]
-    const arbitraryMatch = part.match(/\[[^\]]+\]/);
-    if (arbitraryMatch) {
-      const i = part.indexOf(arbitraryMatch[0]);
+    const arbitraryRanges = getArbitraryBracketRanges(part);
+    for (const range of arbitraryRanges) {
       ranges.arbitraryRanges.push(
         new vscode.Range(
-          startPos.translate(0, i),
-          startPos.translate(0, i + arbitraryMatch[0].length),
+          startPos.translate(0, range.start),
+          startPos.translate(0, range.end),
         ),
       );
     }
@@ -776,9 +887,146 @@ function processClassString(
     ranges.utilityRanges.push(
       new vscode.Range(startPos, startPos.translate(0, part.length)),
     );
-
-    offset += part.length + 1;
   }
+}
+
+function tokenizeClassTokens(value: string): Array<{ value: string; start: number }> {
+  const tokens: Array<{ value: string; start: number }> = [];
+  let tokenStart = -1;
+
+  let squareDepth = 0;
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+
+  for (let i = 0; i < value.length; i += 1) {
+    const char = value[i];
+
+    if (inSingleQuote) {
+      if (char === "'" && !isEscaped(value, i)) {
+        inSingleQuote = false;
+      }
+      continue;
+    }
+
+    if (inDoubleQuote) {
+      if (char === '"' && !isEscaped(value, i)) {
+        inDoubleQuote = false;
+      }
+      continue;
+    }
+
+    if (char === "'" && squareDepth > 0) {
+      inSingleQuote = true;
+      continue;
+    }
+
+    if (char === '"' && squareDepth > 0) {
+      inDoubleQuote = true;
+      continue;
+    }
+
+    if (char === "[") {
+      squareDepth += 1;
+    } else if (char === "]" && squareDepth > 0) {
+      squareDepth -= 1;
+    }
+
+    const isBoundary =
+      (char === " " || char === "\n" || char === "\t" || char === "\r") &&
+      squareDepth === 0;
+
+    if (isBoundary) {
+      if (tokenStart !== -1) {
+        tokens.push({ value: value.slice(tokenStart, i), start: tokenStart });
+        tokenStart = -1;
+      }
+      continue;
+    }
+
+    if (tokenStart === -1) {
+      tokenStart = i;
+    }
+  }
+
+  if (tokenStart !== -1) {
+    tokens.push({ value: value.slice(tokenStart), start: tokenStart });
+  }
+
+  return tokens;
+}
+
+function getVariantPrefixLength(part: string): number {
+  let squareDepth = 0;
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let prefixLength = 0;
+
+  for (let i = 0; i < part.length; i += 1) {
+    const char = part[i];
+
+    if (inSingleQuote) {
+      if (char === "'" && !isEscaped(part, i)) {
+        inSingleQuote = false;
+      }
+      continue;
+    }
+
+    if (inDoubleQuote) {
+      if (char === '"' && !isEscaped(part, i)) {
+        inDoubleQuote = false;
+      }
+      continue;
+    }
+
+    if (char === "'" && squareDepth > 0) {
+      inSingleQuote = true;
+      continue;
+    }
+
+    if (char === '"' && squareDepth > 0) {
+      inDoubleQuote = true;
+      continue;
+    }
+
+    if (char === "[") {
+      squareDepth += 1;
+      continue;
+    }
+
+    if (char === "]" && squareDepth > 0) {
+      squareDepth -= 1;
+      continue;
+    }
+
+    if (char === ":" && squareDepth === 0) {
+      prefixLength = i + 1;
+    }
+  }
+
+  return prefixLength;
+}
+
+function getArbitraryBracketRanges(part: string): Array<{ start: number; end: number }> {
+  const ranges: Array<{ start: number; end: number }> = [];
+  const stack: number[] = [];
+
+  for (let i = 0; i < part.length; i += 1) {
+    const char = part[i];
+
+    if (char === "[") {
+      stack.push(i);
+      continue;
+    }
+
+    if (char === "]" && stack.length > 0) {
+      const start = stack.pop();
+      if (start !== undefined) {
+        ranges.push({ start, end: i + 1 });
+      }
+    }
+  }
+
+  return ranges;
 }
 
 function processTemplateLiteral(
