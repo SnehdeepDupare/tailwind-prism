@@ -13,6 +13,11 @@ type PrismColors = {
   utility: string;
 };
 
+type CommentRange = {
+  start: number;
+  end: number;
+};
+
 const PRESETS: Record<string, PrismColors> = {
   Clear: {
     variant: "#2563EB",
@@ -359,10 +364,15 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 function getTailwindContextAtCursor(
-  document: vscode.TextDocument,
+  text: string,
   offset: number,
+  commentRanges: CommentRange[],
 ): { value: string; baseIndex: number; type?: string } | null {
-  const text = document.getText();
+  if (isOffsetInComment(offset, commentRanges)) {
+    return null;
+  }
+
+  const isCommentAtOffset = createCommentOffsetChecker(commentRanges);
 
   // class / className="..."
   const classRegex = /(className|class)\s*=\s*"([^"]+)"/g;
@@ -370,6 +380,10 @@ function getTailwindContextAtCursor(
   let match: RegExpExecArray | null;
 
   while ((match = classRegex.exec(text))) {
+    if (isCommentAtOffset(match.index)) {
+      continue;
+    }
+
     const value = match[2];
     const baseIndex = match.index + match[0].indexOf(value);
 
@@ -382,6 +396,10 @@ function getTailwindContextAtCursor(
   const fnRegex = /\b(cn|clsx|classnames)\s*\(([\s\S]*?)\)/g;
 
   while ((match = fnRegex.exec(text))) {
+    if (isCommentAtOffset(match.index)) {
+      continue;
+    }
+
     const fullCall = match[0];
     const args = match[2];
 
@@ -411,6 +429,9 @@ function updateEditor(editor?: vscode.TextEditor) {
 
   clearDecorations();
 
+  const text = editor.document.getText();
+  const commentRanges = getCommentRanges(text);
+
   const ranges = {
     variantRanges: [] as vscode.Range[],
     importantRanges: [] as vscode.Range[],
@@ -421,7 +442,7 @@ function updateEditor(editor?: vscode.TextEditor) {
   if (highlightMode === "cursor") {
     const cursorOffset = editor.document.offsetAt(editor.selection.active);
 
-    const context = getTailwindContextAtCursor(editor.document, cursorOffset);
+    const context = getTailwindContextAtCursor(text, cursorOffset, commentRanges);
 
     if (!context) {
       return;
@@ -430,12 +451,18 @@ function updateEditor(editor?: vscode.TextEditor) {
     if (context.type === "function") {
       // process ALL strings + templates inside cn(...)
       const args = context.value;
+      const isCommentAtOffset = createCommentOffsetChecker(commentRanges);
 
       // strings
       const stringRegex = /"([^"]+)"/g;
       let strMatch: RegExpExecArray | null;
 
       while ((strMatch = stringRegex.exec(args))) {
+        const rawStart = context.baseIndex + strMatch.index;
+        if (isCommentAtOffset(rawStart)) {
+          continue;
+        }
+
         const value = strMatch[1];
         const baseIndex = context.baseIndex + strMatch.index + 1;
 
@@ -447,6 +474,11 @@ function updateEditor(editor?: vscode.TextEditor) {
       let tplMatch: RegExpExecArray | null;
 
       while ((tplMatch = templateRegex.exec(args))) {
+        const rawStart = context.baseIndex + tplMatch.index;
+        if (isCommentAtOffset(rawStart)) {
+          continue;
+        }
+
         const value = tplMatch[1];
         const baseIndex = context.baseIndex + tplMatch.index + 1;
 
@@ -463,7 +495,7 @@ function updateEditor(editor?: vscode.TextEditor) {
     }
   } else {
     // ✅ FULL FILE MODE
-    const text = editor.document.getText();
+    const isCommentAtOffset = createCommentOffsetChecker(commentRanges);
 
     // class / className
     const classRegex = /(className|class)\s*=\s*"([^"]+)"/g;
@@ -471,6 +503,10 @@ function updateEditor(editor?: vscode.TextEditor) {
     let match: RegExpExecArray | null;
 
     while ((match = classRegex.exec(text))) {
+      if (isCommentAtOffset(match.index)) {
+        continue;
+      }
+
       const value = match[2];
       const baseIndex = match.index + match[0].indexOf(value);
 
@@ -481,13 +517,24 @@ function updateEditor(editor?: vscode.TextEditor) {
     const fnRegex = /\b(cn|clsx|classnames)\s*\(([\s\S]*?)\)/g;
 
     while ((match = fnRegex.exec(text))) {
+      if (isCommentAtOffset(match.index)) {
+        continue;
+      }
+
       const args = match[2];
+      const argsStart = match.index + match[0].indexOf(args);
+      const isCommentInArgsAtOffset = createCommentOffsetChecker(commentRanges);
 
       // strings
       const stringRegex = /"([^"]+)"/g;
       let strMatch: RegExpExecArray | null;
 
       while ((strMatch = stringRegex.exec(args))) {
+        const rawStart = argsStart + strMatch.index;
+        if (isCommentInArgsAtOffset(rawStart)) {
+          continue;
+        }
+
         const value = strMatch[1];
         const baseIndex = match.index + match[0].indexOf(strMatch[0]) + 1;
 
@@ -499,6 +546,11 @@ function updateEditor(editor?: vscode.TextEditor) {
       let tplMatch: RegExpExecArray | null;
 
       while ((tplMatch = templateRegex.exec(args))) {
+        const rawStart = argsStart + tplMatch.index;
+        if (isCommentInArgsAtOffset(rawStart)) {
+          continue;
+        }
+
         const value = tplMatch[1];
         const baseIndex = match.index + match[0].indexOf(tplMatch[0]) + 1;
 
@@ -508,6 +560,164 @@ function updateEditor(editor?: vscode.TextEditor) {
   }
 
   applyDecorations(editor, ranges);
+}
+
+function getCommentRanges(text: string): CommentRange[] {
+  const ranges: CommentRange[] = [];
+  const length = text.length;
+
+  let i = 0;
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let inTemplate = false;
+
+  while (i < length) {
+    const char = text[i];
+
+    if (inSingleQuote) {
+      if (char === "'" && !isEscaped(text, i)) {
+        inSingleQuote = false;
+      }
+      i += 1;
+      continue;
+    }
+
+    if (inDoubleQuote) {
+      if (char === '"' && !isEscaped(text, i)) {
+        inDoubleQuote = false;
+      }
+      i += 1;
+      continue;
+    }
+
+    if (inTemplate) {
+      if (char === "`" && !isEscaped(text, i)) {
+        inTemplate = false;
+      }
+      i += 1;
+      continue;
+    }
+
+    if (char === "'") {
+      inSingleQuote = true;
+      i += 1;
+      continue;
+    }
+
+    if (char === '"') {
+      inDoubleQuote = true;
+      i += 1;
+      continue;
+    }
+
+    if (char === "`") {
+      inTemplate = true;
+      i += 1;
+      continue;
+    }
+
+    if (text.startsWith("//", i) && text[i - 1] !== ":") {
+      const start = i;
+      i += 2;
+
+      while (i < length && text[i] !== "\n") {
+        i += 1;
+      }
+
+      ranges.push({ start, end: i });
+      continue;
+    }
+
+    if (char === "#" && isHashLineCommentStart(text, i)) {
+      const start = i;
+      i += 1;
+
+      while (i < length && text[i] !== "\n") {
+        i += 1;
+      }
+
+      ranges.push({ start, end: i });
+      continue;
+    }
+
+    if (text.startsWith("/*", i)) {
+      const start = i;
+      const closeIndex = text.indexOf("*/", i + 2);
+
+      if (closeIndex === -1) {
+        ranges.push({ start, end: length });
+        break;
+      }
+
+      i = closeIndex + 2;
+      ranges.push({ start, end: i });
+      continue;
+    }
+
+    if (text.startsWith("<!--", i)) {
+      const start = i;
+      const closeIndex = text.indexOf("-->", i + 4);
+
+      if (closeIndex === -1) {
+        ranges.push({ start, end: length });
+        break;
+      }
+
+      i = closeIndex + 3;
+      ranges.push({ start, end: i });
+      continue;
+    }
+
+    i += 1;
+  }
+
+  return ranges;
+}
+
+function createCommentOffsetChecker(commentRanges: CommentRange[]) {
+  return (offset: number) => {
+    return isOffsetInComment(offset, commentRanges);
+  };
+}
+
+function isOffsetInComment(offset: number, commentRanges: CommentRange[]): boolean {
+  for (const range of commentRanges) {
+    if (offset < range.start) {
+      return false;
+    }
+
+    if (range.start <= offset && offset < range.end) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isHashLineCommentStart(text: string, index: number): boolean {
+  let cursor = index - 1;
+
+  while (cursor >= 0 && text[cursor] !== "\n") {
+    if (text[cursor] !== " " && text[cursor] !== "\t" && text[cursor] !== "\r") {
+      return false;
+    }
+
+    cursor -= 1;
+  }
+
+  return true;
+}
+
+function isEscaped(text: string, index: number): boolean {
+  let slashCount = 0;
+  let cursor = index - 1;
+
+  while (cursor >= 0 && text[cursor] === "\\") {
+    slashCount += 1;
+    cursor -= 1;
+  }
+
+  return slashCount % 2 === 1;
 }
 
 function processClassString(
