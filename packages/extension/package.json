@@ -3,7 +3,7 @@
   "displayName": "Tailwind Prism",
   "description": "Semantic syntax highlighting for Tailwind CSS",
   "publisher": "Snehdeep",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "engines": {
     "vscode": "^1.105.0"
   },
