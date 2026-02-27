@@ -1,5 +1,4 @@
 import { Icons } from "@/components/icons";
-import { siteConfig } from "@/constants/site";
 import {
   IconStack3,
   IconCursorText,
@@ -63,5 +62,10 @@ export const DOWNLOAD_LINKS = [
     title: "Cursor",
     url: "cursor:extension/Snehdeep.tailwind-prism",
     icon: Icons.cursor,
+  },
+  {
+    title: "Antigravity",
+    url: "antigravity:extension/Snehdeep.tailwind-prism",
+    icon: Icons.antigravity,
   },
 ];
